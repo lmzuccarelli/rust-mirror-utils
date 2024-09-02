@@ -1,0 +1,18 @@
+[package]
+name = "rust-mirror-utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+custom-logger = { git = "https://github.com/lmzuccarelli/rust-custom-logger", branch = "main", version = "0.1.4" }
+mirror-error = { git = "https://github.com/lmzuccarelli/rust-mirror-error", branch = "main", version = "0.1.0" }
+mirror-copy = { git = "https://github.com/lmzuccarelli/rust-mirror-copy", branch = "main", version = "0.6.0" }
+mirror-catalog-index = { git = "https://github.com/lmzuccarelli/rust-mirror-catalog-index", branch = "main", version = "0.4.0"}
+sha256 = "1.5.0"
+serde = "1.0.196"
+serde_derive = "1.0.196"
+serde_json = "1.0.113"
+
+[dev-dependencies]
+tokio-test = "0.4.3" 
+
