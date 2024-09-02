@@ -1,5 +1,5 @@
 [package]
-name = "rust-mirror-utils"
+name = "mirror-utils"
 version = "0.1.0"
 edition = "2021"
 
