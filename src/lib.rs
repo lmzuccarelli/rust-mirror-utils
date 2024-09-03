@@ -715,6 +715,7 @@ mod tests {
             false
         ));
         assert_eq!(res.is_ok(), true);
+        let _ = aw!(fs_handler("test".to_string(), "remove_file", None));
     }
     #[test]
     fn fs_open_or_create_fail() {
@@ -807,5 +808,22 @@ mod tests {
             "operator".to_string()
         ));
         assert_eq!(res.is_ok(), true)
+    }
+    #[test]
+    fn history_schema_pass() {
+        let hist = History {
+            v1compatibility: "test".to_string(),
+        };
+        assert_eq!(hist.v1compatibility, "test");
+    }
+    #[test]
+    fn imagereferenve_schema_pass() {
+        let ir = ImageReference {
+            registry: "test.io".to_string(),
+            namespace: "test".to_string(),
+            name: "test-operator".to_string(),
+            version: "v1.0".to_string(),
+        };
+        assert_eq!(ir.version, "v1.0");
     }
 }
