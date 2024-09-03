@@ -1,14 +1,74 @@
 use custom_logger::*;
-use mirror_catalog_index::ManifestSchema;
-use mirror_copy::{FsLayer, ImageReference, Manifest, ManifestList};
+use mirror_copy::Manifest;
 use mirror_error::MirrorError;
 use serde_derive::{Deserialize, Serialize};
-use sha256::digest;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use std::os::unix::fs::MetadataExt;
 use std::path::Path;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct ManifestList {
+    #[serde(rename = "manifests")]
+    pub manifests: Vec<Manifest>,
+
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FsLayer {
+    pub blob_sum: String,
+    pub original_ref: Option<String>,
+    pub size: Option<i64>,
+    //pub number: Option<i16>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestConfig {
+    pub media_type: String,
+    pub size: i64,
+    pub digest: String,
+}
+
+// used only for operator index manifests
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestSchema {
+    pub tag: Option<String>,
+    pub name: Option<String>,
+    pub architecture: Option<String>,
+    pub schema_version: Option<i64>,
+    pub config: Option<ManifestConfig>,
+    pub history: Option<Vec<History>>,
+    pub fs_layers: Vec<FsLayer>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct History {
+    #[serde(rename = "v1Compatibility")]
+    pub v1compatibility: String,
+}
+
+// ImageReference
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageReference {
+    pub registry: String,
+    pub namespace: String,
+    pub name: String,
+    pub version: String,
+}
+
+// DestinationRegistry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DestinationRegistry {
+    pub protocol: String,
+    pub registry: String,
+    pub name: String,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Ord, Eq)]
 pub struct MirrorImageInfo {
@@ -316,40 +376,6 @@ pub async fn fs_handler(
     Ok("ok".to_string())
 }
 
-// verify_file - function to check size and sha256 hash of contents
-pub async fn verify_file(
-    _log: &Logging,
-    dir: String,
-    blob_sum: String,
-    blob_size: u64,
-    data: Vec<u8>,
-) -> Result<(), MirrorError> {
-    let f = &format!("{}/{}", dir, blob_sum);
-    let res = fs::metadata(&f);
-    if res.is_ok() {
-        if res.unwrap().size() != blob_size {
-            let err = MirrorError::new(&format!(
-                "sha256 file size don't match {}",
-                blob_size.clone()
-            ));
-            return Err(err);
-        }
-        let hash = digest(&data);
-        if hash != blob_sum {
-            let err = MirrorError::new(&format!(
-                "sha256 hash contents don't match {} {}",
-                hash,
-                blob_sum.clone()
-            ));
-            return Err(err);
-        }
-    } else {
-        let err = MirrorError::new(&format!("sha256 hash metadata file {}", f));
-        return Err(err);
-    }
-    Ok(())
-}
-
 // parse the manifest json
 pub fn parse_json_metadata(data: String) -> Result<Vec<MirrorImageInfo>, MirrorError> {
     // Parse the string of data into serde_json::Manifest.
@@ -570,85 +596,7 @@ mod tests {
         }
         assert_eq!(res.is_err(), true);
     }
-    #[test]
-    fn fs_verify_file_pass() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
 
-        macro_rules! aw {
-            ($e:expr) => {
-                tokio_test::block_on($e)
-            };
-        }
-
-        let data = fs::read_to_string(
-            "test-artifacts/c9e9e89d3e43c791365ec19dc5acd1517249a79c09eb482600024cd1c6475abe",
-        )
-        .expect("should read file");
-
-        let res = aw!(verify_file(
-            log,
-            "test-artifacts".to_string(),
-            "c9e9e89d3e43c791365ec19dc5acd1517249a79c09eb482600024cd1c6475abe".to_string(),
-            504,
-            data.into_bytes()
-        ));
-        if res.is_err() {
-            log.error(&format!(
-                "result -> {}",
-                res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
-        }
-        assert_eq!(res.is_ok(), true);
-    }
-    #[test]
-    fn fs_verify_file_fail() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
-
-        macro_rules! aw {
-            ($e:expr) => {
-                tokio_test::block_on($e)
-            };
-        }
-
-        let data = fs::read_to_string(
-            "test-artifacts/c9e9e89d3e43c791365ec19dc5acd1517249a79c09eb482600024cd1c6475abe",
-        )
-        .expect("should read file");
-
-        let res = aw!(verify_file(
-            log,
-            "test-artifacts".to_string(),
-            "c9e9e89d3e43c791365ec19dc5acd1517249a79c09eb482600024cd1c6475abe".to_string(),
-            100,
-            data.clone().into_bytes()
-        ));
-        if res.is_err() {
-            log.error(&format!(
-                "result -> {}",
-                res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
-        }
-        assert_eq!(res.is_err(), true);
-
-        let res = aw!(verify_file(
-            log,
-            "test-artifacts".to_string(),
-            "sha256:65e311ef7036acc3692d291403656b840fd216d120b3c37af768f91df050257d".to_string(),
-            428,
-            data.clone().into_bytes()
-        ));
-        if res.is_err() {
-            log.error(&format!(
-                "result -> {}",
-                res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
-        }
-        assert_eq!(res.is_err(), true);
-    }
     #[test]
     fn parse_json_manifest_fail() {
         let data = "{ ".to_string();
@@ -738,21 +686,18 @@ mod tests {
             blob_sum: "sha256:abcdef321323213123123123131".to_string(),
             size: Some(10),
             original_ref: Some("test.io/test/test-index:v1.23".to_string()),
-            number: None,
         };
         vec_layer.insert(0, fs_a);
         let fs_b = FsLayer {
             blob_sum: "sha256:abcdef321323213123123123131".to_string(),
             size: Some(10),
             original_ref: Some("test.io/test/test-index:v1.23".to_string()),
-            number: None,
         };
         vec_layer.insert(0, fs_b);
         let fs_c = FsLayer {
             blob_sum: "sha256:efefacd98765432101234567890".to_string(),
             size: Some(200),
             original_ref: Some("test.io/test/test-index:v1.23".to_string()),
-            number: None,
         };
         vec_layer.insert(0, fs_c);
         map_in.insert("test.io/test/test-index".to_string(), vec_layer.clone());

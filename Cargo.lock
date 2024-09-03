@@ -665,32 +665,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mirror-catalog-index"
-version = "0.4.0"
-source = "git+https://github.com/lmzuccarelli/rust-mirror-catalog-index?branch=main#719cc3675455780b1be331159ca1c186231ac2fb"
-dependencies = [
- "custom-logger",
- "flate2",
- "mirror-config",
- "mirror-copy",
- "serde",
- "serde_derive",
- "serde_json",
- "tar",
-]
-
-[[package]]
-name = "mirror-config"
-version = "0.2.0"
-source = "git+https://github.com/lmzuccarelli/rust-mirror-config?branch=main#7d4515c4906c1b9b3c1261766960e6304c2eecc8"
-dependencies = [
- "serde",
- "serde_derive",
- "serde_json",
- "serde_yaml",
-]
-
-[[package]]
 name = "mirror-copy"
 version = "0.6.0"
 source = "git+https://github.com/lmzuccarelli/rust-mirror-copy?branch=main#6809a4321143e1c4e8e0b31947de9f416b0e6fb3"
@@ -723,7 +697,6 @@ name = "mirror-utils"
 version = "0.1.0"
 dependencies = [
  "custom-logger",
- "mirror-catalog-index",
  "mirror-copy",
  "mirror-error",
  "serde",
@@ -1049,19 +1022,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_yaml"
-version = "0.9.34+deprecated"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
-]
-
-[[package]]
 name = "sha2"
 version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1335,12 +1295,6 @@ checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "url"
