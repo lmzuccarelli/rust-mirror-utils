@@ -616,8 +616,8 @@ dependencies = [
 
 [[package]]
 name = "mirror-copy"
-version = "0.7.0"
-source = "git+https://github.com/lmzuccarelli/rust-mirror-copy?branch=main#b1e83aa298c32f22484bf8a5b87b3b1b5fe2cd00"
+version = "0.8.1"
+source = "git+https://github.com/lmzuccarelli/rust-mirror-copy?branch=main#3d326f4a9b0b787e13a0d4f0d78def02e2ea724c"
 dependencies = [
  "async-trait",
  "base64",
@@ -643,7 +643,7 @@ source = "git+https://github.com/lmzuccarelli/rust-mirror-error?branch=main#9d9c
 
 [[package]]
 name = "mirror-utils"
-version = "0.2.0"
+version = "0.3.1"
 dependencies = [
  "custom-logger",
  "mirror-copy",

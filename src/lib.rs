@@ -273,6 +273,7 @@ pub fn remove_duplicates(
             }
         }
         map.insert(k.to_string(), vec_layer.clone());
+        vec_layer = Vec::new();
     }
     map
 }
