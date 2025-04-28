@@ -117,9 +117,9 @@ pub mod keepalive {
     }
 }
 
-pub fn parse_image(log: &Logging, image: String) -> ImageReference {
+pub fn parse_image(image: String) -> ImageReference {
     // check if we have digest
-    log.debug(&format!("[parse_image] parsing image {}", image.clone()));
+    debug!("[parse_image] parsing image {}", image.clone());
     if image.contains("@") {
         let mut hld = image.split("@");
         let img = hld.nth(0).unwrap();
@@ -133,8 +133,8 @@ pub fn parse_image(log: &Logging, image: String) -> ImageReference {
                 name: vec_comp[2].to_string(),
                 version: digest.to_string(),
             };
-            log.debug(&format!("image input {}", image.clone()));
-            log.debug(&format!("image digest reference {:#?}", ir.clone()));
+            debug!("image input {}", image.clone());
+            debug!("image digest reference {:#?}", ir.clone());
             return ir;
         } else {
             let ir = ImageReference {
@@ -163,8 +163,8 @@ pub fn parse_image(log: &Logging, image: String) -> ImageReference {
                     name: name.to_string(),
                     version: tag.to_string(),
                 };
-                log.debug(&format!("image input {}", image.clone()));
-                log.debug(&format!("image tag reference {:#?}", ir.clone()));
+                debug!("image input {}", image.clone());
+                debug!("image tag reference {:#?}", ir.clone());
                 return ir;
             } else {
                 return empty_ir;
@@ -493,22 +493,18 @@ pub fn read_and_parse_metadata(file: String) -> Result<Vec<MirrorImageInfo>, Mir
 }
 
 pub async fn process_and_update_manifest(
-    log: &Logging,
     manifest: String,
     file: String,
     file_override: HashMap<String, String>,
 ) -> Result<Option<String>, MirrorError> {
-    log.debug(&format!(
-        "[pocess_and_update_manifest] file {} ",
-        file.clone()
-    ));
+    debug!("[pocess_and_update_manifest] file {} ", file.clone());
     let mut changed = false;
     let res_file = file_override.get(&file.clone());
     if res_file.is_some() {
-        log.debug(&format!(
+        debug!(
             "[process_and_update_manifest] using override file {}",
             res_file.unwrap()
-        ));
+        );
         return Ok(Some(res_file.unwrap().to_string()));
     }
     let exists = Path::new(&file.clone()).exists();
@@ -540,25 +536,21 @@ mod tests {
 
     #[test]
     fn fs_handler_all_fail() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
-
         let res = aw!(fs_handler("/root/crap".to_string(), "create_dir", None));
         if res.is_err() {
-            log.error(&format!(
+            error!(
                 "result -> {}",
                 res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
+            );
         }
         assert_eq!(res.is_err(), true);
 
         let res = aw!(fs_handler("/root/crap".to_string(), "remove_dir", None));
         if res.is_err() {
-            log.error(&format!(
+            error!(
                 "result -> {}",
                 res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
+            );
         }
         assert_eq!(res.is_err(), true);
 
@@ -568,19 +560,19 @@ mod tests {
             None
         ));
         if res.is_err() {
-            log.error(&format!(
+            error!(
                 "result -> {}",
                 res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
+            );
         }
         assert_eq!(res.is_err(), true);
 
         let res = aw!(fs_handler("/root/crap.txt".to_string(), "read", None));
         if res.is_err() {
-            log.error(&format!(
+            error!(
                 "result -> {}",
                 res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
+            );
         }
         assert_eq!(res.is_err(), true);
 
@@ -590,10 +582,10 @@ mod tests {
             Some("nonesense".to_string())
         ));
         if res.is_err() {
-            log.error(&format!(
+            error!(
                 "result -> {}",
                 res.as_ref().err().unwrap().to_string().to_lowercase()
-            ));
+            );
         }
         assert_eq!(res.is_err(), true);
     }
@@ -639,13 +631,7 @@ mod tests {
     }
     #[test]
     fn parse_image_tag_pass() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
-        let res = parse_image(
-            log,
-            "registry.redhat.io/redhat/redhat-operator-index:v4.15".to_string(),
-        );
+        let res = parse_image("registry.redhat.io/redhat/redhat-operator-index:v4.15".to_string());
         assert_eq!(res.registry, "registry.redhat.io");
         assert_eq!(res.namespace, "redhat");
         assert_eq!(res.name, "redhat-operator-index");
@@ -653,11 +639,7 @@ mod tests {
     }
     #[test]
     fn parse_image_digest_pass() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
         let res = parse_image(
-            log,
             "quay.io/ocp-release/ocp-release-dev@sha256:abcdef321323213123123123131".to_string(),
         );
         assert_eq!(res.registry, "quay.io");
@@ -667,13 +649,8 @@ mod tests {
     }
     #[test]
     fn parse_image_bad_image_pass() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
-        let res = parse_image(
-            log,
-            "quay.io/ocp-release-dev@sha256:abcdef321323213123123123131".to_string(),
-        );
+        let res =
+            parse_image("quay.io/ocp-release-dev@sha256:abcdef321323213123123123131".to_string());
         assert_eq!(res.registry, "");
         assert_eq!(res.namespace, "");
         assert_eq!(res.name, "");
@@ -756,9 +733,6 @@ mod tests {
     }
     #[test]
     fn process_and_update_manifest_pass() {
-        let log = &Logging {
-            log_level: Level::INFO,
-        };
         let data = aw!(fs_handler(
             "test-artifacts/manifest.json".to_string(),
             "read",
@@ -766,7 +740,6 @@ mod tests {
         ));
         let map: HashMap<String, String> = HashMap::new();
         let res = aw!(process_and_update_manifest(
-            log,
             data.unwrap(),
             "test-artifacts/manifest.json".to_string(),
             map
@@ -776,9 +749,6 @@ mod tests {
     }
     #[test]
     fn process_and_update_manifest_override_pass() {
-        let log = &Logging {
-            log_level: Level::DEBUG,
-        };
         let data = aw!(fs_handler(
             "test-artifacts/manifest.json".to_string(),
             "read",
@@ -790,7 +760,6 @@ mod tests {
             "test.json".to_string(),
         );
         let res = aw!(process_and_update_manifest(
-            log,
             data.unwrap(),
             "test-artifacts/manifest.json".to_string(),
             map
